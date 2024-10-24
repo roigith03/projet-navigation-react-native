@@ -10,6 +10,7 @@ interface ArchivedTasksScreenProps {
 
 export default function ArchivedTasksScreen({ navigation, onLogout }: ArchivedTasksScreenProps) {
   const [archivedTasks, setArchivedTasks] = useState<Task[]>([]); // State to manage archived tasks
+  const currentUserId = DataSingleton.getCurrentUserId(); // Get the current user's ID
 
   useEffect(() => {
     const fetchArchivedTasks = () => {
@@ -22,7 +23,7 @@ export default function ArchivedTasksScreen({ navigation, onLogout }: ArchivedTa
 
   const handleUnarchiveTask = (taskId: string) => {
     // Update the task to set isDone to false, which will unarchive it
-    DataSingleton.updateTask(taskId, { isDone: false });
+    DataSingleton.unarchiveTask(taskId);
 
     // Refresh the archived tasks list
     setArchivedTasks(prevTasks => prevTasks.filter(task => task.taskId !== taskId));
@@ -63,6 +64,7 @@ export default function ArchivedTasksScreen({ navigation, onLogout }: ArchivedTa
             <Button
               title="Unarchive"
               onPress={() => handleUnarchiveTask(item.taskId)} // Call the unarchive function
+              disabled={item.ownerId !== currentUserId} // Disable button if task is not owned by the current user
             />
           </View>
         )}
@@ -78,11 +80,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: '#fff',
-  },
-  header: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 10,
   },
   taskItem: {
     marginBottom: 15,

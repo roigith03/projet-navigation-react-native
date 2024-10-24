@@ -69,19 +69,21 @@ export class UserSingleton {
   public createTask(title: string, description: string): Task | null {
     if (this.loggedInUser) {
       const newTask: Task = {
-        taskId: Math.random().toString(36).substr(2, 9),  // Génère un ID unique pour la tâche
+        taskId: Math.random().toString(36).substr(2, 9),  // Unique task ID
         ownerId: this.loggedInUser.userId,
         title,
         description,
         isDone: false,
         date: new Date().toISOString().split('T')[0] + ' ' + new Date().toTimeString().split(' ')[0],
-        owner: { firstName: this.loggedInUser.firstName, lastName: this.loggedInUser.lastName },  // Associer nom et prénom
+        owner: { firstName: this.loggedInUser.firstName, lastName: this.loggedInUser.lastName },
       };
+      console.log("Creating task:", newTask); // Log the created task
       this.loggedInUser.tasks.push(newTask);
       return newTask;
     }
     return null;
   }
+  
 
   public getTasks(): Task[] | null {
       if (this.loggedInUser) {

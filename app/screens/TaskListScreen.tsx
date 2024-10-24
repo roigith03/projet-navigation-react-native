@@ -14,36 +14,33 @@ export default function TaskListScreen({ onLogout }: TaskListScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   
-  const userId = '1'; // Replace with actual logged-in user ID
+  const userId = DataSingleton.getCurrentUserId(); // Get actual logged-in user ID from the singleton
 
   useEffect(() => {
     loadTasks();
   }, []);
 
   const loadTasks = () => {
-    const userTasks = DataSingleton.getTasksByOwner(userId, false) || []; // Fallback to an empty array
-    setTasks(userTasks);
+    if (userId) {
+      const userTasks = DataSingleton.getTasksByOwner(userId, false); // Fetch user's non-completed tasks
+      setTasks(userTasks);
+    }
   };
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (!title || !description) {
       Alert.alert('Error', 'Please enter both title and description.');
       return;
     }
 
-    const newTask: Task = {
-      taskId: Date.now().toString(),
-      ownerId: userId,
-      title,
-      description,
-      isDone: false,
-      date: new Date().toISOString(),
-    };
-
-    DataSingleton.addTask(newTask);
-    resetForm();
-    loadTasks();
-    Alert.alert('Success', 'Task added successfully!');
+    const newTask = await DataSingleton.addTask(title, description);
+    if (newTask) {
+      resetForm();
+      loadTasks();
+      Alert.alert('Success', 'Task added successfully!');
+    } else {
+      Alert.alert('Error', 'Failed to add task.');
+    }
   };
 
   const handleToggleTaskStatus = (taskId: string, isDone: boolean) => {
@@ -53,9 +50,14 @@ export default function TaskListScreen({ onLogout }: TaskListScreenProps) {
   };
 
   const handleArchiveTask = (taskId: string) => {
-    DataSingleton.updateTask(taskId, { isDone: true });
-    loadTasks();
-    Alert.alert('Success', 'Task archived successfully!');
+    const task = tasks.find(t => t.taskId === taskId);
+    if (task && task.ownerId === userId) {
+      DataSingleton.updateTask(taskId, { isDone: true });
+      loadTasks();
+      Alert.alert('Success', 'Task archived successfully!');
+    } else {
+      Alert.alert('Error', 'You do not have permission to archive this task.');
+    }
   };
 
   const handleEditTask = (task: Task) => {

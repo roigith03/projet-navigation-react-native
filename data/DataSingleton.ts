@@ -32,20 +32,20 @@ class DataSingleton {
       this.users = [
         {
           userId: '1', email: 'user1@example.com', password: 'password123',
-          firstName: '',
-          lastName: '',
+          firstName: 'Alice',
+          lastName: 'Johnson',
           tasks: []
         },
         {
           userId: '2', email: 'user2@example.com', password: 'password456',
-          firstName: '',
-          lastName: '',
+          firstName: 'Bob',
+          lastName: 'Smith',
           tasks: []
         },
         {
           userId: '3', email: 'user3@example.com', password: 'password789',
-          firstName: '',
-          lastName: '',
+          firstName: 'Charlie',
+          lastName: 'Brown',
           tasks: []
         },
       ];
@@ -59,6 +59,8 @@ class DataSingleton {
           description: 'Finish the development of the React Native app',
           isDone: true, // Completed task
           date: '2024-10-01',
+          ownerName: 'Alice Johnson',
+          ownerEmail: 'alice@example.com',
         },
         {
           taskId: '2',
@@ -67,6 +69,8 @@ class DataSingleton {
           description: 'Check and review pending pull requests',
           isDone: false, // Incomplete task
           date: '2024-10-02',
+          ownerName: 'Alice Johnson',
+          ownerEmail: 'alice@example.com',
         },
         {
           taskId: '3',
@@ -75,6 +79,8 @@ class DataSingleton {
           description: 'Submit the Q3 expense report',
           isDone: true, // Completed task
           date: '2024-09-25',
+          ownerName: 'Bob Smith',
+          ownerEmail: 'bob@example.com',
         },
         {
           taskId: '4',
@@ -83,6 +89,8 @@ class DataSingleton {
           description: 'Prepare slides for the next team meeting',
           isDone: false, // Incomplete task
           date: '2024-10-03',
+          ownerName: 'Bob Smith',
+          ownerEmail: 'bob@example.com',
         },
         {
           taskId: '5',
@@ -91,6 +99,8 @@ class DataSingleton {
           description: 'Resolve the issue in the login flow',
           isDone: true, // Completed task
           date: '2024-10-05',
+          ownerName: 'Charlie Brown',
+          ownerEmail: 'charlie@example.com',
         },
       ];
 
@@ -195,6 +205,26 @@ class DataSingleton {
   }
 
   // Task management
+  public async addTask(title: string, description: string): Promise<Task | null> {
+    if (this.currentUserId) {
+      const newTask: Task = {
+        taskId: Math.random().toString(36).substr(2, 9),  // Generate a unique ID for the task
+        ownerId: this.currentUserId, // Assign the current user as the owner
+        title,
+        description,
+        isDone: false,  // Initial state of the task
+        date: new Date().toISOString().split('T')[0] + ' ' + new Date().toTimeString().split(' ')[0],
+        ownerName: '', // You can set this if needed
+        ownerEmail: '', // You can set this if needed
+      };
+
+      this.tasks.push(newTask);
+      await this.saveTasks(); // Save tasks after adding a new task
+      return newTask;
+    }
+    return null; // Return null if no user is logged in
+  }
+
   public getTasksByOwner(userId: string, isDone: boolean): Task[] {
     return this.tasks.filter(task => task.ownerId === userId && task.isDone === isDone);
   }
@@ -207,16 +237,24 @@ class DataSingleton {
     return this.tasks.filter(task => task.isDone === true);
   }
 
-  public addTask(task: Task) {
-    this.tasks.push(task);
-    this.saveTasks(); // Save tasks after adding a new task
-  }
-
   public updateTask(taskId: string, updatedTask: Partial<Task>) {
     const taskIndex = this.tasks.findIndex(task => task.taskId === taskId);
     if (taskIndex !== -1) {
       this.tasks[taskIndex] = { ...this.tasks[taskIndex], ...updatedTask };
       this.saveTasks(); // Save tasks after updating
+    }
+  }
+
+  public unarchiveTask(taskId: string) {
+    const taskIndex = this.tasks.findIndex(task => task.taskId === taskId);
+    if (taskIndex !== -1) {
+      const task = this.tasks[taskIndex];
+      if (task.ownerId === this.currentUserId) {
+        this.tasks[taskIndex].isDone = false; // Set isDone to false to unarchive
+        this.saveTasks(); // Save tasks after unarchiving
+      } else {
+        console.log('User does not own this task.'); // Handle unauthorized unarchive attempt
+      }
     }
   }
 }
